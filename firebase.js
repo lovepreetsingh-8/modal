@@ -22,13 +22,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Initialize Firebase Auth provider
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
-
-// Function to sign in with Google popup
-export const signInWithGooglePopup = () => signInWithPopup(auth, provider);
-
 // Function to send password reset email
 export const resetPassword = (email) => {
   return sendPasswordResetEmail(auth, email)
