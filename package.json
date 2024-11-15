@@ -10,6 +10,9 @@
      "test": "mocha --reporter spec",
       "coverage": "nyc --reporter=lcov --reporter=text npm test && nyc report"
   },
+  "engines": {
+  "node": ">=18.x <=20.x"
+},
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
     "@expo/vector-icons": "^14.0.4",
