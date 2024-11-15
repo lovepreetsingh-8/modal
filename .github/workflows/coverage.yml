@@ -19,10 +19,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20' # Change if needed
+          node-version: '20' # or the Node.js version you're using
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci  # Installs dependencies based on package-lock.json
 
       - name: Run tests and generate coverage
         run: npm run coverage
