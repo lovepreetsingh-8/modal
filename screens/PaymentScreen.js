@@ -213,7 +213,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
  
-const API_URL = "http://10.0.0.242:4242";
+const API_URL = "http://localhost:4242";
  
 const PaymentScreen = ({ route }) => {
   const { item } = route.params;
@@ -244,62 +244,80 @@ const PaymentScreen = ({ route }) => {
   };
  
   const fetchPaymentSheetParams = async () => {
-    const amountInCents = Math.round(total * 100);
- 
-    if (isNaN(amountInCents) || amountInCents <= 0) {
-      setErrorMessage("Invalid Lease durations");
-      return;
+    try {
+      const amountInCents = Math.round(total * 100);
+  
+      const response = await fetch(`${API_URL}/payment-sheet`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ amount: amountInCents }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const { paymentIntent, ephemeralKey, customer } = await response.json();
+  
+      await addDoc(collection(db, "Payment"), {
+        customerId: customer,
+        ephemeralKey,
+        paymentIntent,
+        amountPaid: total,
+        timestamp: Timestamp.now(),
+      });
+  
+      return { paymentIntent, ephemeralKey, customer };
+    } catch (error) {
+      console.error("Error fetching payment sheet params:", error);
+      Alert.alert("Error", "Failed to fetch payment details. Please try again.");
+      throw error;
     }
- 
-    const response = await fetch(`${API_URL}/payment-sheet`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ amount: amountInCents }),
-    });
- 
-    const { paymentIntent, ephemeralKey, customer } = await response.json();
- 
-    await addDoc(collection(db, "Payment"), {
-      customerId: customer,
-      ephemeralKey,
-      paymentIntent,
-      amountPaid: total,
-      timestamp: Timestamp.now(),
-    });
- 
-    return {
-      paymentIntent,
-      ephemeralKey,
-      customer,
-    };
   };
+  
  
   const initializePaymentSheet = async () => {
-    const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
- 
-    const { error } = await initPaymentSheet({
-      customerId: customer,
-      customerEphemeralKeySecret: ephemeralKey,
-      paymentIntentClientSecret: paymentIntent,
-      merchantDisplayName: "Social Garden",
-    });
- 
-    if (!error) {
-      setLoading(true);
+    try {
+      const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
+  
+      const { error } = await initPaymentSheet({
+        customerId: customer,
+        customerEphemeralKeySecret: ephemeralKey,
+        paymentIntentClientSecret: paymentIntent,
+        merchantDisplayName: "Social Garden",
+      });
+  
+      if (error) {
+        console.error("InitPaymentSheet error:", error);
+        Alert.alert("Error initializing payment sheet", error.message);
+      } else {
+        setLoading(true);
+      }
+    } catch (error) {
+      console.error("Initialization failed:", error);
+      Alert.alert("Error", "Failed to initialize payment sheet.");
     }
   };
+  
  
   const openPaymentSheet = async () => {
-    const { error } = await presentPaymentSheet();
- 
-    if (error) {
-      Alert.alert(`Error: ${error.code}`, error.message);
-    } else {
-      Alert.alert("Success", "Your payment is confirmed!");
+    try {
+      const { error } = await presentPaymentSheet();
+  
+      if (error) {
+        console.error("Payment error:", error);
+        Alert.alert(`Error: ${error.code}`, error.message);
+      } else {
+        Alert.alert("Success", "Your payment is confirmed!");
+      }
+    } catch (error) {
+      console.error("PaymentSheet error:", error);
+      Alert.alert("Payment Failed", "An unexpected error occurred.");
     }
   };
+  
  
   useEffect(() => {
     initializePaymentSheet();

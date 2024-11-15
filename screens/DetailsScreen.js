@@ -34,7 +34,7 @@ const DetailsScreen = ({ route }) => {
           listingName: item.name,
           createdAt: Timestamp.fromDate(new Date()),
         });
-      }
+      }1``
 
       // Navigate to Messages screen with relevant chat details
       navigation.navigate("Messages", {
